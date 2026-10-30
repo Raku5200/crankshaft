@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+      # Custom build branches: every push produces Pi images with our UI.
+      - 'ams/**'
   workflow_dispatch:
     inputs:
       release:

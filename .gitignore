@@ -25,3 +25,6 @@ tools/crankshaft-debug-collector/tests/__pycache__/**
 .github/agents/
 .agents/
 .agent/
+
+# Locally built packages staged by CI for the image
+image_builder/stages/stage60/02-opencardev-packages/files/local-debs/
