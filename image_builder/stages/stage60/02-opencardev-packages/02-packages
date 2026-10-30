@@ -8,3 +8,6 @@ pipewire-pulse
 wireplumber
 pulseaudio-utils
 libspa-0.2-bluetooth
+network-manager
+dnsmasq-base
+polkitd

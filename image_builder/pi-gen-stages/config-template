@@ -35,6 +35,11 @@ KEYBOARD_KEYMAP='gb'
 KEYBOARD_LAYOUT='English (UK)'
 TIMEZONE_DEFAULT='Europe/London'
 
+# Wi-Fi regulatory country. Raspberry Pi OS keeps Wi-Fi radio-blocked until
+# this is set, which would stop the wireless Android Auto hotspot from starting.
+# Two-letter ISO code of the country the car is used in.
+WPA_COUNTRY='LK'
+
 # ====================================================================
 # DEFAULT USER (TEST CREDENTIALS - MUST CHANGE FOR PRODUCTION)
 # ====================================================================

@@ -1,7 +1,7 @@
 [submodule "src/crankshaft-core"]
 	path = src/crankshaft-core
-	url = https://github.com/opencardev/crankshaft-core.git
-	branch = develop
+	url = https://github.com/Raku5200/crankshaft-core.git
+	branch = ams/wireless-aa
 [submodule "src/crankshaft-ui-slim"]
 	path = src/crankshaft-ui-slim
 	url = https://github.com/Raku5200/crankshaft-ui-slim.git

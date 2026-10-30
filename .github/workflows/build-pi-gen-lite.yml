@@ -88,24 +88,22 @@ permissions:
   contents: write
 
 jobs:
-  # Build crankshaft-ui-slim from this repo's submodule (our fork) so the image
-  # ships our UI changes instead of the stock package from apt.opencardev.org.
-  build-ui-slim-deb:
-    name: Build crankshaft-ui-slim .deb (${{ matrix.arch }})
+  # Build crankshaft-core and crankshaft-ui-slim from this repo's submodules
+  # (our forks) so the image ships our changes instead of the stock packages
+  # from apt.opencardev.org.
+  build-component-debs:
+    name: Build ${{ matrix.component }} .deb (${{ matrix.arch }})
     # Native ARM runner: arm64 builds natively; armhf needs QEMU because these
-    # cores have no AArch32 mode.
+    # cores have no AArch32 mode, so armhf builds are much slower.
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 150
+    timeout-minutes: 340
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - arch: armhf
-            platform: linux/arm/v7
-          - arch: arm64
-            platform: linux/arm64
+        component: [crankshaft-core, crankshaft-ui-slim]
+        arch: [armhf, arm64]
     steps:
-      - name: Checkout crankshaft repository with UI submodule
+      - name: Checkout crankshaft repository with submodules
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
@@ -118,9 +116,9 @@ jobs:
           platforms: arm
 
       - name: Build package in Debian container
-        working-directory: src/crankshaft-ui-slim
+        working-directory: src/${{ matrix.component }}
         env:
-          PLATFORM: ${{ matrix.platform }}
+          PLATFORM: ${{ matrix.arch == 'armhf' && 'linux/arm/v7' || 'linux/arm64' }}
           RELEASE: ${{ inputs.release || github.event.inputs.release || 'trixie' }}
         run: |
           set -euo pipefail
@@ -148,13 +146,16 @@ jobs:
       - name: Upload package
         uses: actions/upload-artifact@v7
         with:
-          name: ui-slim-deb-${{ matrix.arch }}
-          path: src/crankshaft-ui-slim/build-pkg/packages/*.deb
+          name: ${{ matrix.component }}-deb-${{ matrix.arch }}
+          path: src/${{ matrix.component }}/build-pkg/packages/*.deb
           if-no-files-found: error
           retention-days: 14
 
   build-lite-images:
-    needs: [build-ui-slim-deb]
+    needs: [build-component-debs]
+    # Still build the other arch's image if one arch's package build failed;
+    # the download step below fails that arch cleanly instead.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 240
     strategy:
@@ -211,11 +212,23 @@ jobs:
           path: pi-gen
           fetch-depth: 1
 
-      - name: Download custom crankshaft-ui-slim package
+      - name: Download custom crankshaft-core and crankshaft-ui-slim packages
         uses: actions/download-artifact@v8
         with:
-          name: ui-slim-deb-${{ matrix.arch }}
+          pattern: crankshaft-*-deb-${{ matrix.arch }}
+          merge-multiple: true
           path: image_builder/stages/stage60/02-opencardev-packages/files/local-debs
+
+      - name: Check both custom packages are present
+        run: |
+          set -euo pipefail
+          ls -l image_builder/stages/stage60/02-opencardev-packages/files/local-debs
+          for pkg in crankshaft-core crankshaft-ui-slim; do
+            if ! ls image_builder/stages/stage60/02-opencardev-packages/files/local-debs/${pkg}_*.deb >/dev/null 2>&1; then
+              echo "::error::Missing custom ${pkg} package for ${{ matrix.arch }}"
+              exit 1
+            fi
+          done
 
       - name: Prepare pi-gen custom stage
         run: |
