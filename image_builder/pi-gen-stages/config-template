@@ -96,6 +96,21 @@ export CRANKSHAFT_APT_SUITE='@@CRANKSHAFT_APT_SUITE@@'
 export CRANKSHAFT_ENABLE_NIGHTLY='@@CRANKSHAFT_ENABLE_NIGHTLY@@'
 
 # ====================================================================
+# BOOT OPTIMISATION (stage60/06-boot-optimization)
+# ====================================================================
+# Master switch for firmware/kernel/systemd boot-time tweaks.
+export CRANKSHAFT_FAST_BOOT=1
+# Skip firmware CSI-camera / DSI-panel probing (set 0 if using a DSI display).
+export CRANKSHAFT_DISABLE_AUTODETECT=1
+# Silent kernel console, no Tux logo or blinking cursor before the UI.
+export CRANKSHAFT_QUIET_BOOT=1
+# Force the HDMI mode for panels with a bad EDID or that power up after the
+# Pi. Empty = use EDID. Example for 800x480 panels: '800x480@60'
+export CRANKSHAFT_HDMI_MODE='800x480@60'
+# Don't run a login prompt on tty1 behind the UI (SSH/serial still work).
+export CRANKSHAFT_DISABLE_TTY1_GETTY=1
+
+# ====================================================================
 # ADVANCED OPTIONS
 # ====================================================================
 # Disable cloud-init/netplan provisioning in generated images.
