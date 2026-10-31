@@ -155,6 +155,32 @@ UNIT
     echo "  cloud-init will be disabled after first boot"
 fi
 
+# Bluetooth must be on for wireless Android Auto and phone audio. Clear any
+# rfkill soft block before BlueZ starts and have BlueZ power the adapter up.
+cat > /etc/systemd/system/crankshaft-bluetooth-unblock.service << 'UNIT'
+[Unit]
+Description=Unblock Bluetooth radio (Crankshaft)
+Before=bluetooth.service
+DefaultDependencies=no
+After=systemd-rfkill.service
+
+[Service]
+Type=oneshot
+ExecStart=-/usr/sbin/rfkill unblock bluetooth
+
+[Install]
+WantedBy=bluetooth.target multi-user.target
+UNIT
+systemctl enable crankshaft-bluetooth-unblock.service >/dev/null 2>&1 || true
+if [ -f /etc/bluetooth/main.conf ]; then
+    if grep -qE '^[#[:space:]]*AutoEnable[[:space:]]*=' /etc/bluetooth/main.conf; then
+        sed -i -E 's/^[#[:space:]]*AutoEnable[[:space:]]*=.*/AutoEnable=true/' /etc/bluetooth/main.conf
+    else
+        printf '\n[Policy]\nAutoEnable=true\n' >> /etc/bluetooth/main.conf
+    fi
+    echo "  Bluetooth adapter powers on at boot"
+fi
+
 if [ "${DISABLE_TTY1_GETTY}" = "1" ]; then
     # The UI owns the HDMI output via KMS; a getty on tty1 only causes a
     # login prompt to flash before/after the UI. SSH and serial still work.
