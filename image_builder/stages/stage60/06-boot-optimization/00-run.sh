@@ -133,6 +133,28 @@ disable_if_present keyboard-setup.service console-setup.service \
 # and is (re)created at boot.
 disable_if_present dphys-swapfile.service
 
+# cloud-init only matters on the very first boot (Raspberry Pi Imager
+# user/Wi-Fi/SSH customisation). On every later boot it still runs four
+# Python stages (local/network/config/final) that cost ~20s on a Pi Zero 2 W
+# and delay crankshaft-core. Let it finish the first boot, then switch it off.
+if [ -d /etc/cloud ]; then
+    cat > /etc/systemd/system/crankshaft-cloud-init-once.service << 'UNIT'
+[Unit]
+Description=Disable cloud-init after the first boot (Crankshaft)
+After=cloud-final.service
+ConditionPathExists=!/etc/cloud/cloud-init.disabled
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/touch /etc/cloud/cloud-init.disabled
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+    systemctl enable crankshaft-cloud-init-once.service >/dev/null 2>&1 || true
+    echo "  cloud-init will be disabled after first boot"
+fi
+
 if [ "${DISABLE_TTY1_GETTY}" = "1" ]; then
     # The UI owns the HDMI output via KMS; a getty on tty1 only causes a
     # login prompt to flash before/after the UI. SSH and serial still work.
