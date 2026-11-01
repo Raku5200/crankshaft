@@ -15,21 +15,24 @@ context.properties = {
 EOF
 
 # Route Crankshaft system services to the crankshaft user's PipeWire/Pulse sockets.
-install -d -m 755 /etc/systemd/system/crankshaft-core.service.d
-cat > /etc/systemd/system/crankshaft-core.service.d/20-pipewire-runtime.conf << 'EOF'
-[Service]
-Environment="XDG_RUNTIME_DIR=/run/user/%U"
-Environment="PIPEWIRE_RUNTIME_DIR=/run/user/%U"
-Environment="PULSE_SERVER=unix:/run/user/%U/pulse/native"
-EOF
+# Use the literal UID: in a system unit %U is the service manager's UID (0), not
+# User=, so "/run/user/%U" pointed at root's runtime dir. ProtectHome=true also
+# hides /run/user entirely; read-only keeps it visible (sockets still connect).
+CRANKSHAFT_UID=$(id -u crankshaft)
+for unit in crankshaft-core crankshaft-ui-slim; do
+  install -d -m 755 "/etc/systemd/system/${unit}.service.d"
+  cat > "/etc/systemd/system/${unit}.service.d/20-pipewire-runtime.conf" << EOF
+[Unit]
+Wants=user@${CRANKSHAFT_UID}.service
+After=user@${CRANKSHAFT_UID}.service
 
-install -d -m 755 /etc/systemd/system/crankshaft-ui-slim.service.d
-cat > /etc/systemd/system/crankshaft-ui-slim.service.d/20-pipewire-runtime.conf << 'EOF'
 [Service]
-Environment="XDG_RUNTIME_DIR=/run/user/%U"
-Environment="PIPEWIRE_RUNTIME_DIR=/run/user/%U"
-Environment="PULSE_SERVER=unix:/run/user/%U/pulse/native"
+ProtectHome=read-only
+Environment="XDG_RUNTIME_DIR=/run/user/${CRANKSHAFT_UID}"
+Environment="PIPEWIRE_RUNTIME_DIR=/run/user/${CRANKSHAFT_UID}"
+Environment="PULSE_SERVER=unix:/run/user/${CRANKSHAFT_UID}/pulse/native"
 EOF
+done
 
 # Enable services for multi-user and graphical targets
 systemctl enable crankshaft-core.service
@@ -45,7 +48,6 @@ systemctl --global mask pulseaudio.service pulseaudio.socket || true
 install -d -m 755 /var/lib/systemd/linger
 touch /var/lib/systemd/linger/crankshaft
 
-CRANKSHAFT_UID=$(id -u crankshaft)
 systemctl enable "user@${CRANKSHAFT_UID}.service"
 
 echo "Stage60/05: Services enabled successfully"
