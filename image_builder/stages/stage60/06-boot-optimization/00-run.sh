@@ -181,6 +181,17 @@ if [ -f /etc/bluetooth/main.conf ]; then
     echo "  Bluetooth adapter powers on at boot"
 fi
 
+# libmtp's udev rule runs mtp-probe on every new phone-like USB device,
+# including the phone again after it switches to Android Auto mode. udev
+# holds the device's "add" event until the probe finishes, so Crankshaft
+# (libusb hotplug) sees the phone many seconds late. A head unit never
+# needs MTP.
+mkdir -p /etc/udev/rules.d
+cat > /etc/udev/rules.d/60-crankshaft-no-mtp-probe.rules << 'RULE'
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ENV{MTP_NO_PROBE}="1"
+RULE
+echo "  MTP probing of USB devices disabled"
+
 if [ "${DISABLE_TTY1_GETTY}" = "1" ]; then
     # The UI owns the HDMI output via KMS; a getty on tty1 only causes a
     # login prompt to flash before/after the UI. SSH and serial still work.
