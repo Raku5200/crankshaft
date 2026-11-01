@@ -11,3 +11,5 @@ libspa-0.2-bluetooth
 network-manager
 dnsmasq-base
 polkitd
+hostapd
+libqt6sql6-sqlite
