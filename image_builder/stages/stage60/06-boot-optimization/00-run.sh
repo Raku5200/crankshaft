@@ -181,6 +181,20 @@ if [ -f /etc/bluetooth/main.conf ]; then
     echo "  Bluetooth adapter powers on at boot"
 fi
 
+# BlueZ's SIM Access plugin listens on RFCOMM channel 8, the channel wireless
+# Android Auto uses, so the Android Auto record was never published. A head
+# unit has no use for SIM Access: start bluetoothd without it.
+BTD_EXEC=\$(sed -n 's/^ExecStart=//p' /lib/systemd/system/bluetooth.service | head -n1)
+if [ -n "\${BTD_EXEC}" ]; then
+    mkdir -p /etc/systemd/system/bluetooth.service.d
+    cat > /etc/systemd/system/bluetooth.service.d/10-crankshaft-no-sap.conf << UNIT
+[Service]
+ExecStart=
+ExecStart=\${BTD_EXEC} --noplugin=sap
+UNIT
+    echo "  Bluetooth SIM Access plugin disabled (frees RFCOMM channel 8)"
+fi
+
 # libmtp's udev rule runs mtp-probe on every new phone-like USB device,
 # including the phone again after it switches to Android Auto mode. udev
 # holds the device's "add" event until the probe finishes, so Crankshaft
