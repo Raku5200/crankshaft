@@ -7,6 +7,7 @@ pipewire-bin
 pipewire-pulse
 wireplumber
 pulseaudio-utils
+gstreamer1.0-pulseaudio
 libspa-0.2-bluetooth
 network-manager
 dnsmasq-base
