@@ -34,6 +34,14 @@ Environment="PULSE_SERVER=unix:/run/user/${CRANKSHAFT_UID}/pulse/native"
 EOF
 done
 
+# Car IBus interface (Resler USB, /dev/ttyUSB*): core needs the dialout group.
+usermod -a -G dialout crankshaft || true
+install -d -m 755 /etc/systemd/system/crankshaft-core.service.d
+cat > /etc/systemd/system/crankshaft-core.service.d/30-ibus.conf << 'EOF'
+[Service]
+SupplementaryGroups=dialout
+EOF
+
 # Enable services for multi-user and graphical targets
 systemctl enable crankshaft-core.service
 systemctl enable crankshaft-ui-slim-display-setup.service
