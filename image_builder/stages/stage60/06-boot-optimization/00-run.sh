@@ -141,6 +141,9 @@ if [ -d /etc/cloud ]; then
     cat > /etc/systemd/system/crankshaft-cloud-init-once.service << 'UNIT'
 [Unit]
 Description=Disable cloud-init after the first boot (Crankshaft)
+# Pulled in by cloud-final itself. Being wanted by multi-user.target as well
+# made a cycle (cloud-final runs after multi-user.target), systemd dropped
+# this job on every boot and cloud-init was never switched off.
 After=cloud-final.service
 ConditionPathExists=!/etc/cloud/cloud-init.disabled
 
@@ -149,8 +152,9 @@ Type=oneshot
 ExecStart=/usr/bin/touch /etc/cloud/cloud-init.disabled
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=cloud-final.service
 UNIT
+    rm -f /etc/systemd/system/multi-user.target.wants/crankshaft-cloud-init-once.service
     systemctl enable crankshaft-cloud-init-once.service >/dev/null 2>&1 || true
     echo "  cloud-init will be disabled after first boot"
 fi
