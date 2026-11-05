@@ -156,7 +156,8 @@ jobs:
     # Still build the other arch's image if one arch's package build failed;
     # the download step below fails that arch cleanly instead.
     if: ${{ !cancelled() }}
-    runs-on: ubuntu-latest
+    # ubuntu-latest moved to 26.04, which has no qemu-user-static package.
+    runs-on: ubuntu-24.04
     timeout-minutes: 240
     strategy:
       fail-fast: false
