@@ -14,6 +14,18 @@ context.properties = {
 }
 EOF
 
+# Keep phone calls on the phone. WirePlumber would otherwise offer the
+# Hands-Free profile, the phone would treat the Pi as a car kit and send call
+# audio to it. Wireless Android Auto doesn't need it: crankshaft-core keeps
+# the Bluetooth link up with its own Headset profile (WirelessAABootstrap).
+install -d -m 755 /etc/wireplumber/wireplumber.conf.d
+cat > /etc/wireplumber/wireplumber.conf.d/60-crankshaft-no-calls.conf << 'EOF'
+monitor.bluez.properties = {
+  bluez5.roles = [ a2dp_sink a2dp_source ]
+  bluez5.hfphsp-backend = "none"
+}
+EOF
+
 # Route Crankshaft system services to the crankshaft user's PipeWire/Pulse sockets.
 # Use the literal UID: in a system unit %U is the service manager's UID (0), not
 # User=, so "/run/user/%U" pointed at root's runtime dir. ProtectHome=true also
