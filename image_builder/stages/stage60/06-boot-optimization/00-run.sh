@@ -133,6 +133,15 @@ disable_if_present keyboard-setup.service console-setup.service \
 # and is (re)created at boot.
 disable_if_present dphys-swapfile.service
 
+# Raspberry Pi OS's rpi-swap backs zram with a file on the SD card
+# (/var/swap, set up by rpi-setup-loop@var-swap at boot) and writes idle
+# pages out to it. Keep swap in compressed RAM only: no SD writes and no
+# loop-device setup in the boot path.
+install -d -m 755 /etc/rpi/swap.conf.d
+printf '[Main]\nMechanism=zram\n' > /etc/rpi/swap.conf.d/60-crankshaft.conf
+disable_if_present rpi-zram-writeback.timer
+rm -f /var/swap
+
 # cloud-init only matters on the very first boot (Raspberry Pi Imager
 # user/Wi-Fi/SSH customisation). On every later boot it still runs four
 # Python stages (local/network/config/final) that cost ~20s on a Pi Zero 2 W
